@@ -1,1 +1,1 @@
-zomato analysis based on a provided data set usign excel only.
+zomato analysis based on a provided data set using excel only.
