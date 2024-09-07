@@ -257,7 +257,7 @@ try {
 try{
    Write-Host "Setting display to internal mode." -ForegroundColor Cyan
    Start-Process "C:\Windows\System32\DisplaySwitch.exe" "/internal"
-   Log-Message "cloning display"
+   Log-Message "internal display"
 } catch {
    Log-Message "display settings failed to change"
 }
