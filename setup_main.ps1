@@ -255,8 +255,8 @@ try {
 
 # Ensure the display is set correctly after auto login
 try{
-   Write-Host "Setting display to clone mode." -ForegroundColor Cyan
-   Start-Process "C:\Windows\System32\DisplaySwitch.exe" "/clone"
+   Write-Host "Setting display to internal mode." -ForegroundColor Cyan
+   Start-Process "C:\Windows\System32\DisplaySwitch.exe" "/internal"
    Log-Message "cloning display"
 } catch {
    Log-Message "display settings failed to change"
