@@ -255,10 +255,12 @@ try {
 
 # Ensure the display is set correctly after auto login
 try{
-   Write-Host "Setting display to extend mode." -ForegroundColor Cyan
-   Start-Process "C:\Windows\System32\DisplaySwitch.exe" "/extend"
+   Write-Host "Setting display to clone mode." -ForegroundColor Cyan
+   Start-Process "C:\Windows\System32\DisplaySwitch.exe" "/clone"
+   Log-Message "cloning display"
 } catch {
    Log-Message "display settings failed to change"
 }
+
 # Log script completion
 Log-Message "Setup complete for instance ${instanceName}. The instance is fully configured and ready."
