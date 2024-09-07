@@ -245,9 +245,9 @@ try {
 # Set up Windows AutoLogon
 try {
     Log-Message "Setting up Windows AutoLogon..."
-#    Invoke-WebRequest -Uri "https://live.sysinternals.com/Autologon.exe" -OutFile "$InstallDir\Autologon.exe"
+    Invoke-WebRequest -Uri "https://live.sysinternals.com/Autologon.exe" -OutFile "$InstallDir\Autologon.exe"
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "DisableCAD" -Value 1
-#    Start-Process "$InstallDir\Autologon.exe" -ArgumentList "Administrator", ".\", $AdminPassword, "/accepteula" -NoNewWindow -Wait
+    Start-Process "$InstallDir\Autologon.exe" -ArgumentList "Administrator", ".\", $AdminPassword, "/accepteula" -NoNewWindow -Wait
     Log-Message "Windows AutoLogon set up for instance ${instanceName}."
 } catch {
     Log-Message "Windows AutoLogon setup failed for instance ${instanceName}. Error: $_"
