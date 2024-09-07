@@ -264,3 +264,27 @@ try{
 
 # Log script completion
 Log-Message "Setup complete for instance ${instanceName}. The instance is fully configured and ready."
+
+### Adding Task Scheduler Automation
+# Function to create a scheduled task to run the script at startup
+function Set-TaskScheduler {
+    param (
+        [string]$ScriptPath
+    )
+
+    # Command to create the task in Task Scheduler
+    $taskName = "ChangeAdminPasswordOnStartup"
+    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -File `"$ScriptPath`""
+    $trigger = New-ScheduledTaskTrigger -AtStartup
+    $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopOnIdleEnd -StartWhenAvailable
+    
+    Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -TaskName $taskName -Settings $settings
+    Log-Message "Scheduled task created to run script on startup."
+}
+
+# Path to this script (make sure the path is correct)
+$ScriptPath = "C:\\setup.ps1"  
+Log-Message "password changed"
+# Call the function to create the scheduled task
+Set-TaskScheduler $ScriptPath
