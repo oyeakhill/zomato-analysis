@@ -273,7 +273,7 @@ try {
 # Create a new user account named "Gamer"
 try {
     Log-Message "Creating Gamer user account..."
-    $gamerPassword = ConvertTo-SecureString "GamerInitialPassword" -AsPlainText -Force
+    $gamerPassword = ConvertTo-SecureString "Password@123" -AsPlainText -Force
     New-LocalUser -Name "Gamer" -Password $gamerPassword -FullName "Gamer Account" -Description "Account for gaming purposes"
     Add-LocalGroupMember -Group "Administrators" -Member "Gamer"
     Log-Message "Gamer user account created successfully."
@@ -317,11 +317,10 @@ try {
     Pause
 }
 
-# Ensure the display is set correctly after auto login
+# Disabling the Microsoft Basic Display Adapter and Removing the Ctrl + Alt + Del to unlock in Moonlight
 try {
-    Write-Host "Setting display to internal mode." -ForegroundColor Cyan
-    Start-Process "C:\Windows\System32\DisplaySwitch.exe" "/internal"
-    Log-Message "Internal display set."
+    Get-PnpDevice -FriendlyName "Microsoft Basic Display Adapter" | Disable-PnpDevice -Confirm:$false
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "DisableCAD" -Value 1
 } catch {
     Log-Message "Failed to set internal display. Error: $_"
 }
