@@ -2,8 +2,9 @@
 $InstallDir = "C:\CloudRigSetup"
 $LogFilePath = "C:\Program Files\setup-log.txt"
 $RestartFlagPath = "$InstallDir\restart-flag.txt"
-$CounterFilePath = "$InstallDir\instance-counter.txt"  # File to keep track of instance numbers
+#$CounterFilePath = "$InstallDir\instance-counter.txt"  # File to keep track of instance numbers
 $SetupCompleteFlagPath = "$InstallDir\setup-complete-flag.txt"  # Flag to indicate if setup is already complete
+$instanceId = (Invoke-RestMethod -Uri http://169.254.169.254/latest/meta-data/instance-id)
 
 # Function to log messages
 function Log-Message {
@@ -35,7 +36,7 @@ if (Test-Path -Path $SetupCompleteFlagPath) {
     # Define the API endpoint and JSON payload
     $endpoint = "https://password-store-aws.onrender.com/store-data"
     $body = @{
-        instance_number = $instanceNumber  # Use dynamically generated instance name
+        instanceId = $instanceId  # Use dynamically generated instance name
         password = $GamerPassword
     }
     $jsonBody = $body | ConvertTo-Json
@@ -46,20 +47,20 @@ if (Test-Path -Path $SetupCompleteFlagPath) {
     # Send the POST request to store the password and instance name
     try {
         $response = Invoke-RestMethod -Uri $endpoint -Method Post -Body $jsonBody -Headers $headers
-        Log-Message "Password posted successfully for instance ${instanceName}. Setting Gamer password now."
-        Log-Message $instanceNumber
+        Log-Message "Password posted successfully for instance ${instanceId}. Setting Gamer password now."
+        Log-Message $instanceId
         Log-Message "Gamer Password $GamerPassword"
         # Set the password for the Gamer account
         $securePassword = ConvertTo-SecureString $GamerPassword -AsPlainText -Force
         Set-LocalUser -Name "Gamer" -Password $securePassword
         Log-Message "Password set for Gamer account."
     } catch {
-        Log-Message "An error occurred while posting the data for instance ${instanceName}: $_.Exception.Message"
+        Log-Message "An error occurred while posting the data for instance ${instanceId}: $_.Exception.Message"
         Pause
     }
 
     # Log script completion
-    Log-Message "Password change complete for instance ${instanceName}."
+    Log-Message "Password change complete for instance ${instanceId}."
 
     # Exit the script
     exit 0
@@ -92,23 +93,23 @@ try {
 }
 
 # Initialize or read instance number
-if (-not (Test-Path -Path $CounterFilePath)) {
+#if (-not (Test-Path -Path $CounterFilePath)) {
     # If the file does not exist, create it and set the initial instance number to 1
-    1 | Out-File -FilePath $CounterFilePath
-    $instanceNumber = 1
-    Log-Message "Counter file not found. Starting with instance number $instanceNumber."
-} else {
-    # Read the last instance number from the file
-    $instanceNumber = Get-Content -Path $CounterFilePath
-    $instanceNumber = [int]$instanceNumber + 1
-    Log-Message "Read last instance number from counter file. Incrementing to $instanceNumber."
-}
+#    1 | Out-File -FilePath $CounterFilePath
+ #   $instanceNumber = 1
+ #   Log-Message "Counter file not found. Starting with instance number $instanceNumber."
+#} else {
+   # Read the last instance number from the file
+ #   $instanceNumber = Get-Content -Path $CounterFilePath
+ #   $instanceNumber = [int]$instanceNumber + 1
+ #   Log-Message "Read last instance number from counter file. Incrementing to $instanceNumber."
+#}
 
 # Save the new instance number back to the file
-$instanceNumber | Out-File -FilePath $CounterFilePath -Force
+#$instanceNumber | Out-File -FilePath $CounterFilePath -Force
 
 # Define the instance name using the incremented number
-$instanceName = "hb_gaming_$instanceNumber"  # Unique instance name based on the incremented number
+#$instanceId = "hb_gaming_$instanceNumber"  # Unique instance name based on the incremented number
 
 # Install Chocolatey if not installed
 if (-not (Get-Command choco.exe -ErrorAction SilentlyContinue)) {
@@ -292,11 +293,12 @@ function Generate-RandomPassword {
 $GamerPassword = Generate-RandomPassword
 
 # Define the API endpoint and JSON payload
-$endpoint = "https://password-store-aws.onrender.com/store-data"
+$endpoint = "https://password-store-aws.onrender.com/store-passkey"
 $body = @{
-    instance_number = $instanceNumber  # Use dynamically generated instance name
+    instanceId = $instanceID  # Use dynamically generated instance name
     password = $GamerPassword
 }
+ 
 $jsonBody = $body | ConvertTo-Json
 $headers = @{
     "Content-Type" = "application/json"
@@ -305,15 +307,15 @@ $headers = @{
 # Send the POST request to store the password and instance name
 try {
     $response = Invoke-RestMethod -Uri $endpoint -Method Post -Body $jsonBody -Headers $headers
-    Log-Message "Password posted successfully for instance ${instanceName}. Setting Gamer password now."
-    Log-Message $instanceNumber
+    Log-Message "Password posted successfully for instance ${instanceId}. Setting Gamer password now."
+    Log-Message $instanceId
     Log-Message "Gamer Password $GamerPassword"
     # Set the password for the Gamer account
     $securePassword = ConvertTo-SecureString $GamerPassword -AsPlainText -Force
     Set-LocalUser -Name "Gamer" -Password $securePassword
     Log-Message "Password set for Gamer account."
 } catch {
-    Log-Message "An error occurred while posting the data for instance ${instanceName}: $_.Exception.Message"
+    Log-Message "An error occurred while posting the data for instance ${instanceId}: $_.Exception.Message"
     Pause
 }
 
@@ -326,7 +328,7 @@ try {
 }
 
 # Log script completion
-Log-Message "Setup complete for instance ${instanceName}. The instance is fully configured and ready."
+Log-Message "Setup complete for instance ${instanceId}. The instance is fully configured and ready."
 
 # Create a setup complete flag
 New-Item -Path $SetupCompleteFlagPath -ItemType File -Force | Out-Null
@@ -366,3 +368,5 @@ Log-Message "Password changed."
 
 # Call the function to create the scheduled task
 Set-TaskScheduler $ScriptPath
+Restart-EC2Instance -InstanceId $instanceId
+
