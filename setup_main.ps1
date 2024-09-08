@@ -3,28 +3,65 @@ $InstallDir = "C:\CloudRigSetup"
 $LogFilePath = "C:\Program Files\setup-log.txt"
 $RestartFlagPath = "$InstallDir\restart-flag.txt"
 $CounterFilePath = "$InstallDir\instance-counter.txt"  # File to keep track of instance numbers
-
+$SetupCompleteFlagPath = "$InstallDir\setup-complete-flag.txt"  # Flag to indicate if setup is already complete
 
 # Function to log messages
 function Log-Message {
     param (
         [string]$Message
     )
-    $logEntry = "$Message"
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logEntry = "[$timestamp] $Message"
     $logEntry | Out-File -FilePath $LogFilePath -Append
 }
+
 # Log starting the script
 Log-Message "Script started."
 
+# Check if setup is already complete
+if (Test-Path -Path $SetupCompleteFlagPath) {
+    Log-Message "Setup is already complete. Skipping to password change."
+    
+    # Generate a random 10-character password
+    function Generate-RandomPassword {
+        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?'
+        $password = -join ((65..90) + (97..122) + (48..57) + (33..47) | Get-Random -Count 10 | ForEach-Object {[char]$_})
+        return $password
+    }
 
-# Fetch EC2 Instance ID from metadata (this works on EC2 instances)
-$instanceId = ""
-try {
-    $instanceId = (Invoke-RestMethod -Uri http://169.254.169.254/latest/meta-data/instance-id)
-    Log-Message "Instance ID fetched: $instanceId"
-} catch {
-    Log-Message "Failed to fetch Instance ID from metadata: $_"
-    exit 1
+    # Generate the password and store it in $GamerPassword
+    $GamerPassword = Generate-RandomPassword
+
+    # Define the API endpoint and JSON payload
+    $endpoint = "https://password-store-aws.onrender.com/store-data"
+    $body = @{
+        instance_number = $instanceNumber  # Use dynamically generated instance name
+        password = $GamerPassword
+    }
+    $jsonBody = $body | ConvertTo-Json
+    $headers = @{
+        "Content-Type" = "application/json"
+    }
+
+    # Send the POST request to store the password and instance name
+    try {
+        $response = Invoke-RestMethod -Uri $endpoint -Method Post -Body $jsonBody -Headers $headers
+        Log-Message "Password posted successfully for instance ${instanceName}. Setting Gamer password now."
+        Log-Message $instanceNumber
+        Log-Message "Gamer Password $GamerPassword"
+        # Set the password for the Gamer account
+        Start-Process net -ArgumentList "user", "Gamer", $GamerPassword -NoNewWindow -Wait
+        Log-Message "Password set for Gamer account."
+    } catch {
+        Log-Message "An error occurred while posting the data for instance ${instanceName}: $_.Exception.Message"
+        Pause
+    }
+
+    # Log script completion
+    Log-Message "Password change complete for instance ${instanceName}."
+
+    # Exit the script
+    exit 0
 }
 
 # Check if the script has been restarted already
@@ -46,22 +83,31 @@ if (Test-Path -Path $RestartFlagPath) {
 
 # Create setup directory
 try {
-    New-Item -Path $InstallDir -ItemType Directory -Force
+    New-Item -Path $InstallDir -ItemType Directory -Force | Out-Null
     Log-Message "Setup directory created at $InstallDir."
 } catch {
     Log-Message "Failed to create setup directory. Error: $_"
     exit 1
 }
 
-# Generate a random 10-character password
-function Generate-RandomPassword {
-    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?'
-    $password = -join ((65..90) + (97..122) + (48..57) + (33..47) | Get-Random -Count 10 | ForEach-Object {[char]$_})
-    return $password
+# Initialize or read instance number
+if (-not (Test-Path -Path $CounterFilePath)) {
+    # If the file does not exist, create it and set the initial instance number to 1
+    1 | Out-File -FilePath $CounterFilePath
+    $instanceNumber = 1
+    Log-Message "Counter file not found. Starting with instance number $instanceNumber."
+} else {
+    # Read the last instance number from the file
+    $instanceNumber = Get-Content -Path $CounterFilePath
+    $instanceNumber = [int]$instanceNumber + 1
+    Log-Message "Read last instance number from counter file. Incrementing to $instanceNumber."
 }
 
-# Generate the password and store it in $AdminPassword
-$AdminPassword = Generate-RandomPassword
+# Save the new instance number back to the file
+$instanceNumber | Out-File -FilePath $CounterFilePath -Force
+
+# Define the instance name using the incremented number
+$instanceName = "hb_gaming_$instanceNumber"  # Unique instance name based on the incremented number
 
 # Install Chocolatey if not installed
 if (-not (Get-Command choco.exe -ErrorAction SilentlyContinue)) {
@@ -192,7 +238,7 @@ try {
 
     $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", [System.EnvironmentVariableTarget]::Machine)
 
-#    pm2 start C:\CloudRigSetup\server\server.js
+    pm2 start C:\CloudRigSetup\server\server.js
     pm2 save  # Save PM2 process list and re-deploy on startup
     Log-Message "Node.js server started using PM2."
 } catch {
@@ -209,11 +255,32 @@ try {
     Log-Message "Nginx configuration failed. Error: $_"
 }
 
+# Create a new user account named "Gamer"
+try {
+    Log-Message "Creating Gamer user account..."
+    $gamerPassword = ConvertTo-SecureString "GamerInitialPassword" -AsPlainText -Force
+    New-LocalUser -Name "Gamer" -Password $gamerPassword -FullName "Gamer Account" -Description "Account for gaming purposes"
+    Add-LocalGroupMember -Group "Administrators" -Member "Gamer"
+    Log-Message "Gamer user account created successfully."
+} catch {
+    Log-Message "Failed to create Gamer user account. Error: $_"
+}
+
+# Generate a random 10-character password
+function Generate-RandomPassword {
+    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?'
+    $password = -join ((65..90) + (97..122) + (48..57) + (33..47) | Get-Random -Count 10 | ForEach-Object {[char]$_})
+    return $password
+}
+
+# Generate the password and store it in $GamerPassword
+$GamerPassword = Generate-RandomPassword
+
 # Define the API endpoint and JSON payload
 $endpoint = "https://password-store-aws.onrender.com/store-data"
 $body = @{
-    instance_id = $instanceId  # Use the fetched instance ID
-    password = $AdminPassword
+    instance_number = $instanceNumber  # Use dynamically generated instance name
+    password = $GamerPassword
 }
 $jsonBody = $body | ConvertTo-Json
 $headers = @{
@@ -223,41 +290,33 @@ $headers = @{
 # Send the POST request to store the password and instance name
 try {
     $response = Invoke-RestMethod -Uri $endpoint -Method Post -Body $jsonBody -Headers $headers
-    Log-Message "Password posted successfully for instance ID: $instanceId. Setting Windows password now."
+    Log-Message "Password posted successfully for instance ${instanceName}. Setting Gamer password now."
     Log-Message $instanceNumber
-    Log-Message "Admin Password $AdminPassword"
-    # Set the password for the Administrator account
-    Start-Process net -ArgumentList "user", "Administrator", $AdminPassword -NoNewWindow -Wait
-    Log-Message "Password set for Administrator account."
+    Log-Message "Gamer Password $GamerPassword"
+    # Set the password for the Gamer account
+    Start-Process net -ArgumentList "user", "Gamer", $GamerPassword -NoNewWindow -Wait
+    Log-Message "Password set for Gamer account."
 } catch {
-    Log-Message "An error occurred while posting the data for instance ID $instanceId: $_.Exception.Message"
+    Log-Message "An error occurred while posting the data for instance ${instanceName}: $_.Exception.Message"
     Pause
 }
 
-# Set up Windows AutoLogon
-#try {
- #   Log-Message "Setting up Windows AutoLogon..."
-  #  Invoke-WebRequest -Uri "https://live.sysinternals.com/Autologon.exe" -OutFile "$InstallDir\Autologon.exe"
-  #  Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "DisableCAD" -Value 1
-  #  Start-Process "$InstallDir\Autologon.exe" -ArgumentList "Administrator", ".\", $AdminPassword, "/accepteula" -NoNewWindow -Wait
-  #  Log-Message "Windows AutoLogon set up for instance ${instanceName}."
-#} catch {
-#    Log-Message "Windows AutoLogon setup failed for instance ${instanceName}. Error: $_"
-#}
-
 # Ensure the display is set correctly after auto login
-try{
-   Write-Host "Setting display to internal mode." -ForegroundColor Cyan
-   Start-Process "C:\Windows\System32\DisplaySwitch.exe" "/internal"
-   Log-Message "internal display"
+try {
+    Write-Host "Setting display to internal mode." -ForegroundColor Cyan
+    Start-Process "C:\Windows\System32\DisplaySwitch.exe" "/internal"
+    Log-Message "Internal display set."
 } catch {
-   Log-Message "display settings failed to change"
+    Log-Message "Failed to set internal display. Error: $_"
 }
 
 # Log script completion
-Log-Message "Setup complete for instance ID: $instanceId. The instance is fully configured and ready."
+Log-Message "Setup complete for instance ${instanceName}. The instance is fully configured and ready."
 
-### Adding Task Scheduler Automation
+# Create a setup complete flag
+New-Item -Path $SetupCompleteFlagPath -ItemType File -Force | Out-Null
+Log-Message "Setup complete flag created."
+
 # Function to create a scheduled task to run the script at startup
 function Set-TaskScheduler {
     param (
@@ -265,18 +324,23 @@ function Set-TaskScheduler {
     )
 
     # Command to create the task in Task Scheduler
-    $taskName = "ChangeAdminPasswordOnStartup"
+    $taskName = "RunScriptOnStartup"
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -File `"$ScriptPath`""
     $trigger = New-ScheduledTaskTrigger -AtStartup
     $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopOnIdleEnd -StartWhenAvailable
     
-    Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -TaskName $taskName -Settings $settings
-    Log-Message "Scheduled task created to run script on startup."
+try {
+        Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -TaskName $taskName -Settings $settings
+        Log-Message "Scheduled task created to run script on startup."
+    } catch {
+        Log-Message "Failed to create scheduled task. Error: $_"
+    }
 }
 
 # Path to this script (make sure the path is correct)
-$ScriptPath = "C:\\setup.ps1"  
-Log-Message "password changed"
+$ScriptPath = "C:\setup.ps1"  
+Log-Message "Password changed."
+
 # Call the function to create the scheduled task
 Set-TaskScheduler $ScriptPath
