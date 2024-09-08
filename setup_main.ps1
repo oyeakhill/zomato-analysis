@@ -16,6 +16,16 @@ function Log-Message {
 # Log starting the script
 Log-Message "Script started."
 
+# Fetch EC2 Instance ID from metadata (this works on EC2 instances)
+$instanceId = ""
+try {
+    $instanceId = (Invoke-RestMethod -Uri http://169.254.169.254/latest/meta-data/instance-id)
+    Log-Message "Instance ID fetched: $instanceId"
+} catch {
+    Log-Message "Failed to fetch Instance ID from metadata: $_"
+    exit 1
+}
+
 # Check if the script has been restarted already
 if (Test-Path -Path $RestartFlagPath) {
     Log-Message "Restart flag detected. Continuing script after restart."
@@ -42,22 +52,6 @@ try {
     exit 1
 }
 
-# Initialize or read instance number
-if (-not (Test-Path -Path $CounterFilePath)) {
-    # If the file does not exist, create it and set the initial instance number to 1
-    1 | Out-File -FilePath $CounterFilePath
-    $instanceNumber = 1
-    Log-Message "Counter file not found. Starting with instance number $instanceNumber."
-} else {
-    # Read the last instance number from the file
-    $instanceNumber = Get-Content -Path $CounterFilePath
-    $instanceNumber = [int]$instanceNumber + 1
-    Log-Message "Read last instance number from counter file. Incrementing to $instanceNumber."
-}
-
-# Save the new instance number back to the file
-$instanceNumber | Out-File -FilePath $CounterFilePath -Force
-
 # Generate a random 10-character password
 function Generate-RandomPassword {
     $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?'
@@ -69,7 +63,7 @@ function Generate-RandomPassword {
 $AdminPassword = Generate-RandomPassword
 
 # Define the instance name using the incremented number
-$instanceName = "hb_gaming_$instanceNumber"  # Unique instance name based on the incremented number
+#$instanceName = "hb_gaming_$instanceNumber"  # Unique instance name based on the incremented number
 
 # Install Chocolatey if not installed
 if (-not (Get-Command choco.exe -ErrorAction SilentlyContinue)) {
@@ -220,7 +214,7 @@ try {
 # Define the API endpoint and JSON payload
 $endpoint = "https://password-store-aws.onrender.com/store-data"
 $body = @{
-    instance_number = $instanceNumber  # Use dynamically generated instance name
+    instance_id = $instanceId  # Use the fetched instance ID
     password = $AdminPassword
 }
 $jsonBody = $body | ConvertTo-Json
@@ -229,16 +223,16 @@ $headers = @{
 }
 
 # Send the POST request to store the password and instance name
+# Send the POST request to store the password and instance ID
 try {
     $response = Invoke-RestMethod -Uri $endpoint -Method Post -Body $jsonBody -Headers $headers
-    Log-Message "Password posted successfully for instance ${instanceName}. Setting Windows password now."
-    Log-Message $instanceNumber
+    Log-Message "Password posted successfully for instance ID: $instanceId. Setting Windows password now."
     Log-Message "Admin Password $AdminPassword"
     # Set the password for the Administrator account
     Start-Process net -ArgumentList "user", "Administrator", $AdminPassword -NoNewWindow -Wait
     Log-Message "Password set for Administrator account."
 } catch {
-    Log-Message "An error occurred while posting the data for instance ${instanceName}: $_.Exception.Message"
+    Log-Message "An error occurred while posting the data for instance ID $instanceId: $_.Exception.Message"
     Pause
 }
 
@@ -263,7 +257,7 @@ try{
 }
 
 # Log script completion
-Log-Message "Setup complete for instance ${instanceName}. The instance is fully configured and ready."
+Log-Message "Setup complete for instance ID: $instanceId. The instance is fully configured and ready."
 
 ### Adding Task Scheduler Automation
 # Function to create a scheduled task to run the script at startup
