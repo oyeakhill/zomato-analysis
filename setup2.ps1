@@ -50,7 +50,8 @@ if (Test-Path -Path $SetupCompleteFlagPath) {
         Log-Message $instanceNumber
         Log-Message "Gamer Password $GamerPassword"
         # Set the password for the Gamer account
-        Start-Process net -ArgumentList "user", "Gamer", $GamerPassword -NoNewWindow -Wait
+        $securePassword = ConvertTo-SecureString $GamerPassword -AsPlainText -Force
+        Set-LocalUser -Name "Gamer" -Password $securePassword
         Log-Message "Password set for Gamer account."
     } catch {
         Log-Message "An error occurred while posting the data for instance ${instanceName}: $_.Exception.Message"
@@ -154,6 +155,19 @@ try {
     Log-Message "Sunshine installation failed. Error: $_"
 }
 
+# Configure Sunshine settings for Moonlight compatibility
+try {
+    Log-Message "Configuring Sunshine settings for Moonlight compatibility..."
+    $sunshineConfigPath = "C:\Program Files\Sunshine\config\sunshine.conf"
+    $sunshineConfig = Get-Content $sunshineConfigPath
+    $sunshineConfig = $sunshineConfig -replace "^video = \{\s*$", "video = {`r`n  hevc_mode = 1`r`n  hevc_level = 4`r`n  hevc_tier = high"
+    $sunshineConfig = $sunshineConfig -replace "^nvenc = \{\s*$", "nvenc = {`r`n  rc = vbr_hq`r`n  preset = slow"
+    Set-Content -Path $sunshineConfigPath -Value $sunshineConfig
+    Log-Message "Sunshine settings configured for Moonlight compatibility."
+} catch {
+    Log-Message "Failed to configure Sunshine settings for Moonlight compatibility. Error: $_"
+}
+
 # Download NVIDIA drivers using a manual method
 try {
     Log-Message "Downloading NVIDIA drivers..."
@@ -218,9 +232,10 @@ try {
 try {
     Log-Message "Configuring Windows Firewall rules for Sunshine..."
     New-NetFirewallRule -DisplayName "Sunshine TCP Inbound" -Direction Inbound -Protocol TCP -LocalPort 47984 -Action Allow
-    New-NetFirewallRule -DisplayName "Sunshine UDP Inbound" -Direction Inbound -Protocol UDP -LocalPort 47989 -Action Allow
+    New-NetFirewallRule -DisplayName "Sunshine UDP Inbound" -Direction Inbound -Protocol UDP -LocalPort 47998 -Action Allow
     New-NetFirewallRule -DisplayName "Sunshine TCP Outbound" -Direction Outbound -Protocol TCP -LocalPort 47984 -Action Allow
-    New-NetFirewallRule -DisplayName "Sunshine UDP Outbound" -Direction Outbound -Protocol UDP -LocalPort 47989 -Action Allow
+    New-NetFirewallRule -DisplayName "Sunshine UDP Outbound" -Direction Outbound -Protocol UDP -LocalPort 47998 -Action Allow
+    New-NetFirewallRule -DisplayName "Sunshine Outbound Ports" -Direction Outbound -Protocol TCP -LocalPort 45000-50000 -Action Allow
     Log-Message "Windows Firewall rules configured for Sunshine."
 } catch {
     Log-Message "Failed to configure Windows Firewall rules. Error: $_"
@@ -294,7 +309,8 @@ try {
     Log-Message $instanceNumber
     Log-Message "Gamer Password $GamerPassword"
     # Set the password for the Gamer account
-    Start-Process net -ArgumentList "user", "Gamer", $GamerPassword -NoNewWindow -Wait
+    $securePassword = ConvertTo-SecureString $GamerPassword -AsPlainText -Force
+    Set-LocalUser -Name "Gamer" -Password $securePassword
     Log-Message "Password set for Gamer account."
 } catch {
     Log-Message "An error occurred while posting the data for instance ${instanceName}: $_.Exception.Message"
@@ -330,7 +346,7 @@ function Set-TaskScheduler {
     $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopOnIdleEnd -StartWhenAvailable
     
-try {
+    try {
         Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -TaskName $taskName -Settings $settings
         Log-Message "Scheduled task created to run script on startup."
     } catch {
