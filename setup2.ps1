@@ -320,9 +320,9 @@ try {
 # Disabling the Microsoft Basic Display Adapter and Removing the Ctrl + Alt + Del to unlock in Moonlight
 try {
     Get-PnpDevice -FriendlyName "Microsoft Basic Display Adapter" | Disable-PnpDevice -Confirm:$false
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "DisableCAD" -Value 1
+    Log-Message "display disabled successfully. chandirasegaran was here"
 } catch {
-    Log-Message "Failed to set internal display. Error: $_"
+    Log-Message "not disabled. Error: $_"
 }
 
 # Log script completion
@@ -331,6 +331,13 @@ Log-Message "Setup complete for instance ${instanceName}. The instance is fully 
 # Create a setup complete flag
 New-Item -Path $SetupCompleteFlagPath -ItemType File -Force | Out-Null
 Log-Message "Setup complete flag created."
+
+try {
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "DisableCAD" -Value 1
+    log-Message "registry updated"
+} catch {
+    Log-Message "registry not updated. Error: $_"
+}
 
 # Function to create a scheduled task to run the script at startup
 function Set-TaskScheduler {
