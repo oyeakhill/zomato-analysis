@@ -11,7 +11,7 @@ class PinResponse(BaseModel):
 @app.post("/sendpin")
 async def send_pin(pin_response: PinResponse):
     # URL and credentials
-    url = "https://sunshine:1@localhost:47990/api/pin"
+    url = "https://sunshine:123@localhost:47990/api/pin"
     
     # Prepare data
     data = {"pin": pin_response.pin}
