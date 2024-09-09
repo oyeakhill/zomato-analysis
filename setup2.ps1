@@ -368,5 +368,6 @@ Log-Message "Password changed."
 
 # Call the function to create the scheduled task
 Set-TaskScheduler $ScriptPath
-Restart-EC2Instance -InstanceId $instanceId
+Restart-Computer -Force
+
 
