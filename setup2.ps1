@@ -368,6 +368,6 @@ Log-Message "Password changed."
 
 # Call the function to create the scheduled task
 Set-TaskScheduler $ScriptPath
-Restart-Computer -Force
+shutdown /r /t 0
 
 
