@@ -17,6 +17,29 @@ function Log-Message {
 }
 
 # =============================== RUNS ON EVERY STARTUP =======================================
+
+# Define Sunshine folder and executable path
+$sunshineFolder = "C:\Program Files\Sunshine"
+$sunshineExePath = "$sunshineFolder\sunshine.exe"
+
+# Check if the Sunshine folder exists, and run sunshine.exe once it does
+while (-not (Test-Path $sunshineFolder)) {
+    Log-Message "Sunshine folder not found. Waiting for installation..."
+    Start-Sleep -Seconds 10
+}
+
+if (Test-Path $sunshineExePath) {
+    Log-Message "Sunshine folder and executable found. Starting Sunshine..."
+    try {
+        Start-Process -FilePath $sunshineExePath -ArgumentList '/silent /S' -Wait
+        Log-Message "Sunshine started successfully."
+    } catch {
+        Log-Message "Failed to start Sunshine: $_"
+    }
+} else {
+    Log-Message "Sunshine executable not found in $sunshineFolder."
+}
+
 # Check if the initial setup is already done
 if (Test-Path $flagFile) {
     Log-Message "Initial setup is already done. Running FastAPI server and ngrok setup."
