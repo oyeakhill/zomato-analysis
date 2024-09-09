@@ -34,7 +34,7 @@ if (Test-Path -Path $SetupCompleteFlagPath) {
     $GamerPassword = Generate-RandomPassword
 
     # Define the API endpoint and JSON payload
-    $endpoint = "https://password-store-aws.onrender.com/store-data"
+    $endpoint = "https://password-store-aws.onrender.com/store-passkey"
     $body = @{
         instanceId = $instanceId  # Use dynamically generated instance name
         password = $GamerPassword
