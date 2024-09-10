@@ -62,6 +62,15 @@ if (Test-Path -Path $SetupCompleteFlagPath) {
     # Log script completion
     Log-Message "Password change complete for instance ${instanceId}."
 
+    #call for the second script
+    try {
+        Start-Process "C:\setup2.ps1" -Verb RunAs
+        Log-Message "second script has run, check logs for that script inside c\server\setup2.log"
+    } catch {
+        Log-Message "Failed to run setup2.ps1. Error: $_"
+        exit 1
+    }
+
     # Exit the script
     exit 0
 }
