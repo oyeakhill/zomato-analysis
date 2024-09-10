@@ -139,8 +139,6 @@ try {
     Set-Location -Path $nodeServerFolder
     npm install
     npm install pm2 -g 
-    [System.Environment]::SetEnvironmentVariable('NPM_HOME', "$env:APPDATA\npm", [System.EnvironmentVariableTarget]::Machine); $pathEnv = [System.Environment]::GetEnvironmentVariable('Path', [System.EnvironmentVariableTarget]::Machine); if (-not $pathEnv.Split(';') -contains "$env:APPDATA\npm") { [System.Environment]::SetEnvironmentVariable('Path', "$pathEnv;$env:APPDATA\npm", [System.EnvironmentVariableTarget]::Machine) }; Write-Output "NPM_HOME: $([System.Environment]::GetEnvironmentVariable('NPM_HOME', [System.EnvironmentVariableTarget]::Machine))"; Write-Output "PATH: $([System.Environment]::GetEnvironmentVariable('Path', [System.EnvironmentVariableTarget]::Machine))"
-
     Start-Process cmd.exe -ArgumentList "/c cd `"$nodeServerFolder`" && pm2 start .\index.js -n Pinsetup && pm2 save --force" -NoNewWindow -Wait
 
 
