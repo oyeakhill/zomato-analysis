@@ -380,6 +380,9 @@ function Set-TaskScheduler {
 $ScriptPath = "C:\setup.ps1"  
 Log-Message "Password changed."
 
+[Environment]::SetEnvironmentVariable("Path", "$env:Path;C:\Users\Administrator\AppData\Roaming\npm", "Machine")
+Log-Message "path variable set for pm2"
+
 # Call the function to create the scheduled task
 Set-TaskScheduler $ScriptPath
 shutdown /r /t 0
