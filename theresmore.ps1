@@ -50,6 +50,7 @@ if (Test-Path $flagFile) {
     Log-Message "Initial setup is already done. Running PM2"
     try {
         Set-Location -Path $nodeServerFolder
+        npm install pm2 -g 
         pm2 start .\index.js -n Pinsetup
         pm2 save --force
         Log-Message "PM2 Started" 
@@ -136,6 +137,7 @@ try {
 try {
     Set-Location -Path $nodeServerFolder
     npm install
+    npm install pm2 -g 
     pm2 start .\index.js -n PinSetup
     pm2 save --force
 
@@ -151,3 +153,4 @@ if (-not (Test-Path $flagFile)) {
     Log-Message "Flag file created successfully."
 }
 Log-Message "Setup complete. And the PM2 startup is Done."
+ 
