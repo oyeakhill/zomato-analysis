@@ -251,6 +251,9 @@ try {
     New-NetFirewallRule -DisplayName "Sunshine TCP Outbound" -Direction Outbound -Protocol TCP -LocalPort 47984 -Action Allow
     New-NetFirewallRule -DisplayName "Sunshine UDP Outbound" -Direction Outbound -Protocol UDP -LocalPort 47998 -Action Allow
     New-NetFirewallRule -DisplayName "Sunshine Outbound Ports" -Direction Outbound -Protocol TCP -LocalPort 45000-50000 -Action Allow
+    New-NetFirewallRule -DisplayName "Node.js TCP Inbound" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow
+    New-NetFirewallRule -DisplayName "Node.js TCP Outbound" -Direction Outbound -Protocol TCP -LocalPort 3000 -Action Allow
+    
     Log-Message "Windows Firewall rules configured for Sunshine."
 } catch {
     Log-Message "Failed to configure Windows Firewall rules. Error: $_"
