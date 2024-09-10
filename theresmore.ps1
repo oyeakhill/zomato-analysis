@@ -1,7 +1,7 @@
 # Define variables
 $serverFolder = "C:\server"
 $flagFile = "$serverFolder\initial_setup_done.txt"
-$scriptPath = "C:\setup2.ps1" # Update this to the path where you save this script
+$scriptPath = "C:\setup2.ps1" # Path for the second script
 $logFile = "$serverFolder\setup2.log"
 $pythonFileUrl = "https://raw.githubusercontent.com/oyeakhill/zomato-analysis/main/Pub_Mongo.py"
 $pythonFilePath = "$serverFolder\Pub_Mongo.py"
@@ -14,6 +14,13 @@ function Log-Message {
     $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
     $logMessage = "$timestamp - $message"
     Add-Content -Path $logFile -Value $logMessage
+}
+
+# Ensure running as administrator
+If (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Log-Message "Script not running as administrator. Restarting with elevated privileges..."
+    Start-Process powershell.exe "-ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    Exit
 }
 
 # =============================== RUNS ON EVERY STARTUP =======================================
@@ -127,9 +134,6 @@ try {
     Log-Message "Error: $($_.Exception.Message)"
 }
 
-
-
-
 # Install Chocolatey
 if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
     Log-Message "Installing Chocolatey."
@@ -152,8 +156,6 @@ try {
     Log-Message "Failed to install Python or packages: $_"
 }
 
-
-
 # Download the Python file
 Log-Message "Downloading Python file."
 if (-not (Test-Path $serverFolder)) {
@@ -166,14 +168,14 @@ try {
     Log-Message "Failed to download Python file: $_"
 }
 
- # Navigate to the server folder and run FastAPI server
- Set-Location -Path $serverFolder
- try {
-     python -m uvicorn app:app --host 0.0.0.0 --port 8000
-     Log-Message "FastAPI server started successfully."
- } catch {
-     Log-Message "Failed to start FastAPI server: $_"
- }
+# Navigate to the server folder and run FastAPI server
+Set-Location -Path $serverFolder
+try {
+    python -m uvicorn app:app --host 0.0.0.0 --port 8000
+    Log-Message "FastAPI server started successfully."
+} catch {
+    Log-Message "Failed to start FastAPI server: $_"
+}
 
 # Install ngrok
 Log-Message "Installing ngrok."
@@ -209,8 +211,6 @@ try {
     Log-Message "Failed to download Python script: $_"
 }
 
-
-
 # Create flag file to indicate initial setup is done
 Log-Message "Creating flag file for initial setup completion."
 if (-not (Test-Path $flagFile)) {
@@ -228,7 +228,7 @@ if (-not (Test-Path $shortcutPath)) {
         $WshShell = New-Object -ComObject WScript.Shell
         $Shortcut = $WshShell.CreateShortcut($shortcutPath)
         $Shortcut.TargetPath = "powershell.exe"
-        $Shortcut.Arguments = "-File `"$scriptPath`""
+        $Shortcut.Arguments = "-ExecutionPolicy Bypass -File `"$scriptPath`""
         $Shortcut.WorkingDirectory = [System.IO.Path]::GetDirectoryName($scriptPath)
         $Shortcut.Save()
         Log-Message "Script added to startup successfully."
