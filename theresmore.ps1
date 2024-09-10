@@ -154,4 +154,5 @@ if (-not (Test-Path $flagFile)) {
     Log-Message "Flag file created successfully."
 }
 Log-Message "Setup complete. And the PM2 startup is Done."
+shutdown /r /t 0
  
