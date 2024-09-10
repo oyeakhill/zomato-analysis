@@ -62,14 +62,19 @@ if (Test-Path -Path $SetupCompleteFlagPath) {
     # Log script completion
     Log-Message "Password change complete for instance ${instanceId}."
 
-    #call for the second script
-    try {
-        Start-Process "C:\setup2.ps1" -Verb RunAs
-        Log-Message "second script has run, check logs for that script inside c\server\setup2.log"
-    } catch {
-        Log-Message "Failed to run setup2.ps1. Error: $_"
-        exit 1
+    if (-not (Test-Path -Path "C:\server")) {
+    New-Item -Path "C:\server" -ItemType Directory
     }
+
+    #call for the second script
+   
+try {
+    Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File C:\setup2.ps1" -Verb RunAs
+    Log-Message "setup2.ps1 executed successfully."
+} catch {
+    Log-Message "Failed to run setup2.ps1. Error: $_"
+    exit 1   # Exit with an error code if setup2.ps1 fails
+}
 
     # Exit the script
     exit 0
