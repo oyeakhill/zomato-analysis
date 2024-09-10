@@ -158,7 +158,7 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
 Log-Message "Installing Python and Python packages."
 try {
     choco install -y python
-Start-Process cmd.exe -ArgumentList "/k", "pip install fastapi uvicorn httpx requests pymongo & exit"
+    Start-Process cmd.exe -ArgumentList "/k", "python -m pip install fastapi uvicorn httpx requests pymongo & exit"
     Log-Message "Python and packages installed successfully."
 } catch {
     Log-Message "Failed to install Python or packages: $_"
@@ -179,7 +179,7 @@ try {
 # Navigate to the server folder and run FastAPI server in a new CMD prompt
 Set-Location -Path $serverFolder
 try {
-    Start-Process cmd.exe -ArgumentList "/k", "python -m uvicorn app:app --host 0.0.0.0 --port 8000"
+    Start-Process cmd.exe -ArgumentList "/k", "python -m pip install fastapi uvicorn httpx requests pymongo & python -m uvicorn app:app --host 0.0.0.0 --port 8000"
     Log-Message "FastAPI server started in a new CMD window."
 } catch {
     Log-Message "Failed to start FastAPI server: $_"
@@ -208,41 +208,24 @@ try {
     Invoke-WebRequest -Uri $pythonFileUrl -OutFile $pythonFilePath
     Log-Message "Python script downloaded successfully."
     
-    Log-Message "Running Python script."
+    Log-Message "Running Python script in a new CMD window."
     try {
-        python $pythonFilePath
-        Log-Message "Python script executed successfully."
+        # Open a new CMD window and run the Python script
+        Start-Process cmd.exe -ArgumentList "/k", "python $pythonFilePath & exit"
+        Log-Message "Python script executed successfully in a new CMD window."
     } catch {
-        Log-Message "Failed to execute Python script: $_"
+        Log-Message "Failed to execute Python script in a new CMD window: $_"
     }
 } catch {
     Log-Message "Failed to download Python script: $_"
 }
+
 
 # Create flag file to indicate initial setup is done
 Log-Message "Creating flag file for initial setup completion."
 if (-not (Test-Path $flagFile)) {
     New-Item -Path $flagFile -ItemType File -Force
     Log-Message "Flag file created successfully."
-}
-
-# Add script to startup
-Log-Message "Adding script to startup."
-$startupFolder = [System.IO.Path]::Combine($env:APPDATA, "Microsoft\Windows\Start Menu\Programs\Startup")
-$shortcutPath = [System.IO.Path]::Combine($startupFolder, "SetupScript.lnk")
-
-if (-not (Test-Path $shortcutPath)) {
-    try {
-        $WshShell = New-Object -ComObject WScript.Shell
-        $Shortcut = $WshShell.CreateShortcut($shortcutPath)
-        $Shortcut.TargetPath = "powershell.exe"
-        $Shortcut.Arguments = "-ExecutionPolicy Bypass -File `"$scriptPath`""
-        $Shortcut.WorkingDirectory = [System.IO.Path]::GetDirectoryName($scriptPath)
-        $Shortcut.Save()
-        Log-Message "Script added to startup successfully."
-    } catch {
-        Log-Message "Failed to add script to startup: $_"
-    }
 }
 
 Log-Message "Setup complete. The script has been added to startup."
