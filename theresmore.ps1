@@ -51,21 +51,29 @@ if (Test-Path $sunshineExePath) {
 if (Test-Path $flagFile) {
     Log-Message "Initial setup is already done. Running FastAPI server and ngrok setup."
     # Ensure everything is installed using Pip
-    pip install fastapi uvicorn httpx requests pymongo
-    # Navigate to the server folder and run FastAPI server
+
+
+    Log-Message "Ensure everything is installed using Pip"
+    try {
+        Start-Process cmd.exe -ArgumentList "/k", "pip install fastapi uvicorn httpx requests pymongo & exit"
+        Log-Message "Python and packages installation started in a new CMD window."
+    } catch {
+        Log-Message "Failed to install Python or packages: $_"
+    }
+
+    # Navigate to the server folder and run FastAPI server in a new CMD prompt
     Set-Location -Path $serverFolder
     try {
-        python -m uvicorn app:app --host 0.0.0.0 --port 8000
-        Log-Message "FastAPI server started successfully."
+        Start-Process cmd.exe -ArgumentList "/k", "python -m uvicorn app:app --host 0.0.0.0 --port 8000"
+        Log-Message "FastAPI server started in a new CMD window."
     } catch {
         Log-Message "Failed to start FastAPI server: $_"
     }
 
-    # Configure and start ngrok
+    # Configure and start ngrok in a new CMD prompt
     try {
-        ngrok config add-authtoken 2djRUHMH4eXkGdIDSFEt15N6Hzf_Mq8hmS4Hp98gncgV77D
-        ngrok http http://localhost:8000
-        Log-Message "ngrok configured and started successfully."
+        Start-Process cmd.exe -ArgumentList "/k", "ngrok config add-authtoken 2djRUHMH4eXkGdIDSFEt15N6Hzf_Mq8hmS4Hp98gncgV77D & ngrok http http://localhost:8000"
+        Log-Message "ngrok configured and started in a new CMD window."
     } catch {
         Log-Message "Failed to configure or start ngrok: $_"
     }
@@ -150,7 +158,7 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
 Log-Message "Installing Python and Python packages."
 try {
     choco install -y python
-    pip install fastapi uvicorn httpx requests pymongo
+Start-Process cmd.exe -ArgumentList "/k", "pip install fastapi uvicorn httpx requests pymongo & exit"
     Log-Message "Python and packages installed successfully."
 } catch {
     Log-Message "Failed to install Python or packages: $_"
@@ -168,11 +176,11 @@ try {
     Log-Message "Failed to download Python file: $_"
 }
 
-# Navigate to the server folder and run FastAPI server
+# Navigate to the server folder and run FastAPI server in a new CMD prompt
 Set-Location -Path $serverFolder
 try {
-    python -m uvicorn app:app --host 0.0.0.0 --port 8000
-    Log-Message "FastAPI server started successfully."
+    Start-Process cmd.exe -ArgumentList "/k", "python -m uvicorn app:app --host 0.0.0.0 --port 8000"
+    Log-Message "FastAPI server started in a new CMD window."
 } catch {
     Log-Message "Failed to start FastAPI server: $_"
 }
@@ -185,11 +193,11 @@ try {
 } catch {
     Log-Message "Failed to install ngrok: $_"
 }
-# Configure and start ngrok
+
+# Configure and start ngrok in a new CMD prompt
 try {
-    ngrok config add-authtoken 2djRUHMH4eXkGdIDSFEt15N6Hzf_Mq8hmS4Hp98gncgV77D
-    ngrok http http://localhost:8000
-    Log-Message "ngrok configured and started successfully."
+    Start-Process cmd.exe -ArgumentList "/k", "ngrok config add-authtoken 2djRUHMH4eXkGdIDSFEt15N6Hzf_Mq8hmS4Hp98gncgV77D & ngrok http http://localhost:8000"
+    Log-Message "ngrok configured and started in a new CMD window."
 } catch {
     Log-Message "Failed to configure or start ngrok: $_"
 }
