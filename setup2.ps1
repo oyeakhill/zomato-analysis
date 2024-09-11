@@ -34,7 +34,7 @@ if (Test-Path -Path $SetupCompleteFlagPath) {
     $GamerPassword = Generate-RandomPassword
 
     # Define the API endpoint and JSON payload
-    $endpoint = "https://password-store-aws.onrender.com/store-passkey"
+    $endpoint = "https://r57fs53hsk.execute-api.us-east-1.amazonaws.com/default/highbrow_gaming_pw_change"
     $body = @{
         instanceId = $instanceId  # Use dynamically generated instance name
         password = $GamerPassword
@@ -310,7 +310,7 @@ function Generate-RandomPassword {
 $GamerPassword = Generate-RandomPassword
 
 # Define the API endpoint and JSON payload
-$endpoint = "https://password-store-aws.onrender.com/store-passkey"
+$endpoint = "https://r57fs53hsk.execute-api.us-east-1.amazonaws.com/default/highbrow_gaming_pw_change"
 $body = @{
     instanceId = $instanceID  # Use dynamically generated instance name
     password = $GamerPassword
