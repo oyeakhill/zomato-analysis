@@ -4,7 +4,11 @@ $LogFilePath = "C:\Program Files\setup-log.txt"
 $RestartFlagPath = "$InstallDir\restart-flag.txt"
 #$CounterFilePath = "$InstallDir\instance-counter.txt"  # File to keep track of instance numbers
 $SetupCompleteFlagPath = "$InstallDir\setup-complete-flag.txt"  # Flag to indicate if setup is already complete
-$instanceId = (Invoke-RestMethod -Uri http://169.254.169.254/latest/meta-data/instance-id)
+$token = Invoke-RestMethod -Uri "http://169.254.169.254/latest/api/token" `
+    -Headers @{"X-aws-ec2-metadata-token-ttl-seconds" = "21600"} `
+    -Method PUT
+$instanceId = Invoke-RestMethod -Uri "http://169.254.169.254/latest/meta-data/instance-id" `
+    -Headers @{"X-aws-ec2-metadata-token" = $token}
 
 # Function to log messages
 function Log-Message {
