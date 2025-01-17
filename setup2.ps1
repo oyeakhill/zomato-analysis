@@ -263,6 +263,15 @@ try {
     Log-Message "Failed to configure Windows Firewall rules. Error: $_"
 }
 
+# Configure Windows Firewall rules for UDP 47999
+try {
+    New-NetFirewallRule -DisplayName "Sunshine UDP 47999" -Direction Inbound -Protocol UDP -LocalPort 47999 -Action Allow
+    New-NetFirewallRule -DisplayName "Sunshine UDP 47999 Out" -Direction Outbound -Protocol UDP -LocalPort 47999 -Action Allow
+    Log-Message "UDP 47999 firewall rules added successfully."
+} catch {
+    Log-Message "Failed to add UDP 47999 firewall rules: $_"
+}
+
 # Install and start Node.js server using PM2
 try {
     Log-Message "Installing and starting Node.js server using PM2..."
