@@ -174,16 +174,6 @@ try {
     Log-Message "Sunshine installation failed. Error: $_"
 }
 
-# Install Trace
-try {
-    Log-Message "Installing Trace..."
-    Invoke-WebRequest -Uri "https://storage.googleapis.com/trace-downloads/1.4.6/Trace%20Setup%201.4.6.exe" -OutFile "$InstallDir\trace-setup.exe"
-    Start-Process "$InstallDir\trace-setup.exe" -ArgumentList '/SILENT /install /S' -Wait
-    Log-Message "Trace installed successfully."
-} catch {
-    Log-Message "Trace installation failed. Error: $_"
-}
-
 # Configure Sunshine settings for Moonlight compatibility
 try {
     Log-Message "Configuring Sunshine settings for Moonlight compatibility..."
